@@ -1,0 +1,137 @@
+<?php
+// $Id: demo.module,v 1.19.2.10 2009/02/06 17:58:28 smk Exp $
+
+/**
+ * @file
+ * Demonstration Site module
+ */
+
+/**
+ * Implementation of hook_perm().
+ */
+function demo_perm() {
+  return array('administer demo settings');
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function demo_menu() {
+  $items = array();
+  $admin_access = array('administer demo settings');
+
+  $items['admin/build/demo'] = array(
+    'title' => 'Demonstration site',
+    'description' => 'Administer reset interval, create new dumps and manually reset this site.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('demo_admin_settings'),
+    'access arguments' => $admin_access,
+    'file' => 'demo.admin.inc',
+  );
+  $items['admin/build/demo/maintenance'] = array(
+    'title' => 'Status',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => 0,
+  );
+  $items['admin/build/demo/manage'] = array(
+    'title' => 'Manage snapshots',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('demo_manage'),
+    'access arguments' => $admin_access,
+    'file' => 'demo.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 1,
+  );
+  $items['admin/build/demo/dump'] = array(
+    'title' => 'Create snapshot',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('demo_dump'),
+    'access arguments' => $admin_access,
+    'file' => 'demo.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 2,
+  );
+  $items['admin/build/demo/reset'] = array(
+    'title' => 'Reset site',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('demo_reset_confirm'),
+    'access arguments' => $admin_access,
+    'file' => 'demo.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 3,
+  );
+  $items['admin/build/demo/delete/%'] = array(
+    'title' => 'Delete snapshot',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('demo_delete_confirm', 4),
+    'access arguments' => $admin_access,
+    'file' => 'demo.admin.inc',
+    'type' => MENU_CALLBACK,
+  );
+  $items['demo/autocomplete'] = array(
+    'title' => 'Demo Site autocomplete',
+    'page callback' => 'demo_autocomplete',
+    'access arguments' => $admin_access,
+    'file' => 'demo.admin.inc',
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+/**
+ * Implementation of hook_block().
+ */
+function demo_block($op = 'list', $delta = 0, $edit = array()) {
+  switch ($op) {
+    case 'list':
+      $blocks[0] = array('info' => t('Demo site reset'),
+        'status' => 1, 'region' => 'right', 'cache' => BLOCK_NO_CACHE);
+      return $blocks;
+    
+    case 'view':
+      $block = array(
+        'subject' => t('Reset demo'),
+        'content' => drupal_get_form('demo_reset_now'),
+      );
+      return $block;
+  }
+}
+
+function demo_reset_now() {
+  $form['redirect'] = array(
+    '#type' => 'value',
+    '#value' => $_GET['q'],
+  );
+  $form['filename'] = array(
+    '#type' => 'value',
+    '#value' => variable_get('demo_dump_cron', 'demo_site'),
+  );
+  $form['snapshot'] = array(
+    '#value' => t('Active snapshot: !snapshot', array('!snapshot' => variable_get('demo_dump_cron', 'demo_site'))),
+  );
+  $form['reset-demo'] = array(
+    '#type' => 'submit',
+    '#value' => t('Reset now'),
+  );
+  return $form;
+}
+
+function demo_reset_now_submit($form, &$form_state) {
+  require_once drupal_get_path('module', 'demo') .'/demo.admin.inc';
+  demo_reset_confirm_submit($form, $form_state);
+}
+
+/**
+ * Implementation of hook_cron().
+ */
+function demo_cron() {
+  if ($interval = variable_get('demo_reset_interval', 0)) {
+    // See if it's time for a reset.
+    if ((time() - $interval) >= variable_get('demo_reset_last', 0)) {
+      require_once drupal_get_path('module', 'demo') .'/demo.admin.inc';
+      demo_reset(variable_get('demo_dump_cron', 'demo_site'), FALSE);
+      variable_set('demo_reset_last', time());
+    }
+  }
+}
+

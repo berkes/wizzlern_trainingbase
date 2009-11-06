@@ -1,0 +1,34 @@
+body {
+  background: #f2f2f2 url(images/bg-body.png);
+}
+
+#page {
+  background: transparent url(images/bg-page.png) no-repeat top;
+}
+
+#content-area {
+  background: #fff;
+}
+
+
+/**
+* Typography
+*/
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Georgia", serif;
+  font-weight: normal;
+}
+
+.block h2 {
+  text-transform: uppercase;
+  font-size: 100%;
+  letter-spacing: 0.1em;
+}
+
+/**
+* Silly Drupalisms
+*/
+div#edit-search-theme-form-1-wrapper label {
+  display: none;
+}

@@ -1,0 +1,79 @@
+<?php
+// $Id: scheduler.install,v 1.5.2.3 2008/11/01 19:06:17 ericschaefer Exp $
+
+function scheduler_install() {
+  drupal_install_schema('scheduler');
+}
+
+function scheduler_schema() {
+  return array(
+    'scheduler' => array(
+      'description' => t('The main table to hold the scheduler data.'),
+      'fields' => array(
+        'nid' => array(
+          'description' => t('The foreign key to node.nid'),
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ),
+        'publish_on' => array(
+          'description' => t('The UNIX UTC timestamp when to publish'),
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+          'default' => 0,
+        ),
+        'unpublish_on' => array(
+          'description' => t('The UNIX UTC timestamp when to unpublish'),
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+          'default' => 0,
+        ),
+      ),
+      'indexes' => array(
+        'scheduler_publish_on' => array('publish_on'),
+        'scheduler_unpublish_on' => array('unpublish_on'),
+      ),
+      'primary key' => array('nid'),
+    ),
+  );
+}
+
+function scheduler_update_1() {
+  return _system_update_utf8(array('scheduler'));
+}
+
+function scheduler_update_2() {
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      $ret[] = update_sql("ALTER TABLE {scheduler} CHANGE timestamp_posted publish_on int(11) NOT NULL default '0'");
+      $ret[] = update_sql("ALTER TABLE {scheduler} CHANGE timestamp_hidden unpublish_on int(11) NOT NULL default '0'");
+      $ret[] = update_sql("ALTER TABLE {scheduler} ADD timezone int(6) NOT NULL default '0'");
+      break;
+    case 'pgsql':
+      db_change_column($ret, 'scheduler', 'timestamp_posted', 'publish_on', 'integer', array('not null' => TRUE, 'default' => "0"));
+      db_change_column($ret, 'scheduler', 'timestamp_hidden', 'unpublish_on', 'integer', array('not null' => TRUE, 'default' => "0"));
+      db_add_column($ret, 'scheduler', 'timezone', 'integer', array('not null' => TRUE, 'default' => "0"));
+      break;
+  }
+
+  return $ret;
+}
+
+function scheduler_update_3() {
+  $ret[] = update_sql("CREATE INDEX scheduler_publish_on ON {scheduler} (publish_on)");
+  $ret[] = update_sql("CREATE INDEX scheduler_unpublish_on ON {scheduler} (unpublish_on)");
+  return $ret;
+}
+
+function scheduler_update_6100() {
+  $ret = array();
+  if (db_column_exists('scheduler', 'timezone')) {
+    $ret[] = update_sql("UPDATE {scheduler} SET publish_on=publish_on-timezone WHERE publish_on<>0");
+    $ret[] = update_sql("UPDATE {scheduler} SET unpublish_on=unpublish_on-timezone WHERE unpublish_on<>0");
+    $ret[] = update_sql("ALTER TABLE {scheduler} DROP COLUMN timezone");
+  }
+  return $ret; 
+}
