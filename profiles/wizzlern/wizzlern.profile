@@ -206,6 +206,7 @@ function wizzlern_profile_tasks(&$task, $url) {
 function wizzlern_form_alter(&$form, $form_state, $form_id) {
   if ($form_id == 'install_configure') {
     // Set default for site name field.
-    $form['site_information']['site_name']['#wizzlern_value'] = $_SERVER['SERVER_NAME'] . 'Training';
+    $form['site_information']['site_name']['#value'] = $_SERVER['SERVER_NAME'] . '/Training';
   }
 }
+
