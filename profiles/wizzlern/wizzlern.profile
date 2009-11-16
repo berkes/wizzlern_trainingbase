@@ -53,6 +53,10 @@ function wizzlern_profile_modules() {
     1028 => 'userreference',
     1029 => 'filefield',
     1030 => 'imagefield',
+    1031 => 'date_api',
+    1032 => 'date_timezone',
+    1033 => 'date',
+    1034 => 'date_tools',
 
     //Enable Development modules
     //2001 => 'devel',
@@ -163,10 +167,10 @@ function wizzlern_profile_tasks(&$task, $url) {
       'min_word_count' => '',
     ),
     array(
-      'type' => 'news',
-      'name' => st('Newsentry'),
+      'type' => 'event',
+      'name' => st('Event'),
       'module' => 'node',
-      'description' => st("A <em>newsentry</em>, similar in form to a <em>page</em>, is ideal for creating and displaying content that informs or engages website visitors. Press releases, site announcements, and informal blog-like entries may all be created with a <em>newsentry</em>. By default, a <em>newsentry</em> is automatically featured on the site's initial home page, and provides the ability to post comments."),
+      'description' => st("An <em>event</em>, is ideal for creating and displaying content with a date in agenda's, calendars and event-lists. By default, an <em>event</em> is automatically featured on the site's initial home page, and provides the ability to post comments."),
       'custom' => TRUE,
       'modified' => TRUE,
       'locked' => FALSE,
