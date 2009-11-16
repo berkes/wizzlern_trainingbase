@@ -1,5 +1,5 @@
 <?php
-// $Id: imagefield_widget.inc,v 1.37 2009/04/20 23:51:35 quicksketch Exp $
+// $Id: imagefield_widget.inc,v 1.40 2009/09/18 15:30:18 quicksketch Exp $
 
 /**
  * @file
@@ -11,6 +11,10 @@
  */
 function imagefield_widget_settings_form($widget) {
   $form = module_invoke('filefield', 'widget_settings', 'form', $widget);
+
+  if ($form['file_extensions']['#default_value'] == 'txt') {
+    $form['file_extensions']['#default_value'] = 'png gif jpg jpeg';
+  }
 
   $form['max_resolution'] = array(
     '#type' => 'textfield',
@@ -220,7 +224,7 @@ function imagefield_widget_process($element, $edit, &$form_state, $form) {
   // Check if using the default alt text and replace tokens.
   $default_alt = (!$field['widget']['custom_alt'] || (empty($file['status']) && empty($file['data']['alt'])));
   if ($default_alt && function_exists('token_replace')) {
-    $field['widget']['alt'] = token_replace($field['widget']['alt'], 'user', $GLOBALS['user']);
+    $field['widget']['alt'] = empty($field['widget']['alt']) ? '' : token_replace($field['widget']['alt'], 'user', $GLOBALS['user']);
   }
   $element['data']['alt'] = array(
     '#title' => t('Alternate Text'),
@@ -238,7 +242,7 @@ function imagefield_widget_process($element, $edit, &$form_state, $form) {
   // Check if using the default title and replace tokens.
   $default_title = (!$field['widget']['custom_title'] || (empty($file['status']) && empty($file['data']['title'])));
   if ($default_title && function_exists('token_replace')) {
-    $field['widget']['title'] = token_replace($field['widget']['title'], 'user', $GLOBALS['user']);
+    $field['widget']['title'] = empty($field['widget']['title']) ? '' : token_replace($field['widget']['title'], 'user', $GLOBALS['user']);
   }
 
   // If the custom title is enabled, input type defaults to textfield.
@@ -268,7 +272,7 @@ function imagefield_widget_process($element, $edit, &$form_state, $form) {
 /**
  * FormAPI theme function. Theme the output of an image field.
  */
-function theme_imagefield_widget(&$element) {
+function theme_imagefield_widget($element) {
   drupal_add_css(drupal_get_path('module', 'imagefield') .'/imagefield.css');
   return theme('form_element', $element, $element['#children']);
 }

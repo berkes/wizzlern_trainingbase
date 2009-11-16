@@ -1,5 +1,5 @@
 <?php
-// $Id: filefield_field.inc,v 1.31 2009/04/20 22:30:08 quicksketch Exp $
+// $Id: filefield_field.inc,v 1.34 2009/10/20 19:18:10 quicksketch Exp $
 
 /**
  * @file
@@ -19,7 +19,7 @@ function filefield_field_settings_form($field) {
     '#title' => t('List field'),
     '#options' => array(0 => t('Disabled'), 1 => t('Enabled')),
     '#default_value' => $field['list_field'] === '' ? 0 : (int) $field['list_field'],
-    '#description' => t('The "list" option lets a user choose if a file should shown in a list when viewing the content after creation.'),
+    '#description' => t('The "list" option lets a user choose if a file should be shown in a list when viewing the content after creation.'),
     '#attributes' => array('class' => 'filefield-list-field'),
   );
   $form['list_default'] = array(
@@ -155,14 +155,15 @@ function filefield_field_update($node, $field, &$items, $teaser, $page) {
   }
 
   // If this is a new node there are no old items to worry about.
-  if ($node->is_new) {
+  // On new revisions, old files are always maintained in the previous revision.
+  if ($node->is_new || !empty($node->revision)) {
     return;
   } 
 
-  // Delete items from original node if no new revision was created.
+  // Delete items from original node.
   $orig = node_load($node->nid); 
   // If there are, figure out which ones must go.
-  if (empty($node->revision) && !empty($orig->$field['field_name'])) {
+  if (!empty($orig->$field['field_name'])) {
     foreach ($orig->$field['field_name'] as $oitem) {
       if (isset($oitem['fid']) && !in_array($oitem['fid'], $curfids)) {
         // For hook_file_references, remember that this is being deleted.
@@ -265,7 +266,7 @@ function filefield_field_sanitize($node, $field, &$items, $teaser, $page) {
 
     // Verify the file exists on the server.
     if (!empty($item['filepath']) && !file_exists($item['filepath'])) {
-      watchdog('filefield', 'FileField was trying to display the file %file, but it does not exist.', array('%file' => $item['filepath']));
+      watchdog('filefield', 'FileField was trying to display the file %file, but it does not exist.', array('%file' => $item['filepath']), WATCHDOG_WARNING);
     }
   }
 }
