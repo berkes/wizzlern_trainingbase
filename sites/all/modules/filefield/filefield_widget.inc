@@ -1,5 +1,5 @@
 <?php
-// $Id: filefield_widget.inc,v 1.86 2009/04/20 22:51:44 quicksketch Exp $
+// $Id: filefield_widget.inc,v 1.89 2009/07/25 04:35:03 quicksketch Exp $
 
 /**
  * @file
@@ -218,7 +218,7 @@ function filefield_widget_value($element, $edit = FALSE) {
 
     // Checkboxes loose their value when empty.
     // If the list field is present make sure its unchecked value is saved.
-    if ($field['list_field'] && empty($edit['list'])) {
+    if (!empty($field['list_field']) && empty($edit['list'])) {
       $item['list'] = 0;
     }
   }
@@ -254,7 +254,6 @@ function filefield_widget_process($element, $edit, &$form_state, $form) {
   $element['filefield_upload'] = array(
     '#type' => 'submit',
     '#value' => t('Upload'),
-    '#process' => array('form_expand_ahah'),
     '#submit' => array('node_form_submit_build_node'),
     '#ahah' => array( // with JavaScript
        'path' => 'filefield/ahah/'.   $element['#type_name'] .'/'. $element['#field_name'] .'/'. $element['#delta'],
@@ -270,10 +269,12 @@ function filefield_widget_process($element, $edit, &$form_state, $form) {
     '#post' => $element['#post'],
   );
   $element['filefield_remove'] = array(
-    '#name' => $element['#field_name'] .'_'. $element['#delta'] .'_filefield_remove',
+    // With default CCK edit forms, $element['#parents'] is array($element['#field_name'], $element['#delta']).
+    // However, if some module (for example, flexifield) places our widget deeper in the tree, we want to
+    // use that information in constructing the button name.
+    '#name' => implode('_', $element['#parents']) .'_filefield_remove',
     '#type' => 'submit',
     '#value' => t('Remove'),
-    '#process' => array('form_expand_ahah'),
     '#submit' => array('node_form_submit_build_node'),
     '#ahah' => array( // with JavaScript
       'path' => 'filefield/ahah/'.   $element['#type_name'] .'/'. $element['#field_name'] .'/'. $element['#delta'],
@@ -353,7 +354,7 @@ function filefield_widget_process($element, $edit, &$form_state, $form) {
     '#access' => !empty($item['fid']),
   );
 
-  if ($field['description_field']) {
+  if (!empty($field['description_field'])) {
     $element['data']['description'] = array(
       '#type' => 'textfield',
       '#title' => t('Description'),
@@ -363,7 +364,7 @@ function filefield_widget_process($element, $edit, &$form_state, $form) {
     );
   }
 
-  if ($field['list_field']) {
+  if (!empty($field['list_field'])) {
     $element['list'] = array(
       '#type' => empty($item['fid']) ? 'hidden' : 'checkbox',
       '#title' => t('List'),
