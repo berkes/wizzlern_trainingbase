@@ -1,23 +1,22 @@
 <?php
-// $Id: demo.module,v 1.19.2.10 2009/02/06 17:58:28 smk Exp $
+// $Id: demo.module,v 1.19.2.15 2009/11/10 05:38:20 sun Exp $
 
 /**
  * @file
- * Demonstration Site module
+ * Demonstration site API Drupal integration functions.
  */
 
 /**
- * Implementation of hook_perm().
+ * Implements hook_perm().
  */
 function demo_perm() {
   return array('administer demo settings');
 }
 
 /**
- * Implementation of hook_menu().
+ * Implements hook_menu().
  */
 function demo_menu() {
-  $items = array();
   $admin_access = array('administer demo settings');
 
   $items['admin/build/demo'] = array(
@@ -36,7 +35,7 @@ function demo_menu() {
   $items['admin/build/demo/manage'] = array(
     'title' => 'Manage snapshots',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('demo_manage'),
+    'page arguments' => array('demo_manage_form'),
     'access arguments' => $admin_access,
     'file' => 'demo.admin.inc',
     'type' => MENU_LOCAL_TASK,
@@ -45,7 +44,7 @@ function demo_menu() {
   $items['admin/build/demo/dump'] = array(
     'title' => 'Create snapshot',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('demo_dump'),
+    'page arguments' => array('demo_dump_form'),
     'access arguments' => $admin_access,
     'file' => 'demo.admin.inc',
     'type' => MENU_LOCAL_TASK,
@@ -69,8 +68,13 @@ function demo_menu() {
     'type' => MENU_CALLBACK,
   );
   $items['demo/autocomplete'] = array(
-    'title' => 'Demo Site autocomplete',
     'page callback' => 'demo_autocomplete',
+    'access arguments' => $admin_access,
+    'file' => 'demo.admin.inc',
+    'type' => MENU_CALLBACK,
+  );
+  $items['demo/download'] = array(
+    'page callback' => 'demo_download',
     'access arguments' => $admin_access,
     'file' => 'demo.admin.inc',
     'type' => MENU_CALLBACK,
@@ -79,59 +83,35 @@ function demo_menu() {
 }
 
 /**
- * Implementation of hook_block().
+ * Create a new snapshot.
+ *
+ * @param $options
+ *   A structured array of snapshot options:
+ *   - filename: The base output filename, without extension.
+ *   - default: Whether to set this dump as new default snapshot.
+ *   - description: A description for the snapshot. If a snapshot with the same
+ *     name already exists and this is left blank, the new snapshot will reuse
+ *     the existing description.
+ *   - tables: An array of tables to dump, keyed by table name (including table
+ *     prefix, if any). The value is an array of dump options:
+ *     - schema: Whether to dump the table schema.
+ *     - data: Whether to dump the table data.
  */
-function demo_block($op = 'list', $delta = 0, $edit = array()) {
-  switch ($op) {
-    case 'list':
-      $blocks[0] = array('info' => t('Demo site reset'),
-        'status' => 1, 'region' => 'right', 'cache' => BLOCK_NO_CACHE);
-      return $blocks;
-    
-    case 'view':
-      $block = array(
-        'subject' => t('Reset demo'),
-        'content' => drupal_get_form('demo_reset_now'),
-      );
-      return $block;
-  }
-}
-
-function demo_reset_now() {
-  $form['redirect'] = array(
-    '#type' => 'value',
-    '#value' => $_GET['q'],
-  );
-  $form['filename'] = array(
-    '#type' => 'value',
-    '#value' => variable_get('demo_dump_cron', 'demo_site'),
-  );
-  $form['snapshot'] = array(
-    '#value' => t('Active snapshot: !snapshot', array('!snapshot' => variable_get('demo_dump_cron', 'demo_site'))),
-  );
-  $form['reset-demo'] = array(
-    '#type' => 'submit',
-    '#value' => t('Reset now'),
-  );
-  return $form;
-}
-
-function demo_reset_now_submit($form, &$form_state) {
-  require_once drupal_get_path('module', 'demo') .'/demo.admin.inc';
-  demo_reset_confirm_submit($form, $form_state);
+function demo_dump($options) {
+  module_load_include('inc', 'demo', 'demo.admin');
+  return _demo_dump($options);
 }
 
 /**
- * Implementation of hook_cron().
+ * Reset site using snapshot.
+ *
+ * @param $filename
+ *   Base snapshot filename, without extension.
+ * @param $verbose
+ *   Whether to output status messages.
  */
-function demo_cron() {
-  if ($interval = variable_get('demo_reset_interval', 0)) {
-    // See if it's time for a reset.
-    if ((time() - $interval) >= variable_get('demo_reset_last', 0)) {
-      require_once drupal_get_path('module', 'demo') .'/demo.admin.inc';
-      demo_reset(variable_get('demo_dump_cron', 'demo_site'), FALSE);
-      variable_set('demo_reset_last', time());
-    }
-  }
+function demo_reset($filename, $verbose = TRUE) {
+  module_load_include('inc', 'demo', 'demo.admin');
+  return _demo_reset($filename, $verbose);
 }
 

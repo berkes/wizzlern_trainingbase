@@ -1,5 +1,5 @@
 <?php
-// $Id: node.views.inc,v 1.97.2.1 2009/11/02 23:25:14 merlinofchaos Exp $
+// $Id: node.views.inc,v 1.93.2.8 2009/12/28 21:11:50 merlinofchaos Exp $
 /**
  * @file
  * Provide views data and handlers for node.module
@@ -236,6 +236,7 @@ function node_views_data() {
     ),
     'sort' => array(
       'handler' => 'views_handler_sort',
+      'help' => t('Whether or not the node is sticky. To list sticky nodes first, set this to descending.'),
     ),
   );
 
@@ -375,6 +376,18 @@ function node_views_data() {
     ),
   );
 
+  // uid field
+  $data['node']['uid'] = array(
+    'title' => t('Author'),
+    'help' => t('Relate a node to the user who created it.'),
+    'relationship' => array(
+      'handler' => 'views_handler_relationship',
+      'base' => 'users',
+      'base field' => 'uid',
+      'label' => t('user'),
+    ),
+  );
+
   // ----------------------------------------------------------------------
   // Node revisions table
 
@@ -398,15 +411,15 @@ function node_views_data() {
     ),
   );
 
-  // uid field
+  // uid field for node revisions
   $data['node_revisions']['uid'] = array(
     'title' => t('User'),
     'help' => t('Relate a node revision to the user who created the revision.'),
     'relationship' => array(
       'handler' => 'views_handler_relationship',
       'base' => 'users',
-      'base field' => 'uid',
-      'label' => t('user'),
+      'field' => 'uid',
+      'label' => t('revision user'),
     ),
   );
 

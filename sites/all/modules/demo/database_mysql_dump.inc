@@ -1,5 +1,5 @@
 <?php
-// $Id: database_mysql_dump.inc,v 1.5.2.4 2008/10/28 18:25:51 smk Exp $
+// $Id: database_mysql_dump.inc,v 1.5.2.11 2009/11/19 17:11:21 smk Exp $
 
 // Some older mysql client libs are missing this constant.
 if (!defined('MYSQLI_BINARY_FLAG')) {
@@ -8,32 +8,39 @@ if (!defined('MYSQLI_BINARY_FLAG')) {
 
 /**
  * Dump active database.
+ *
+ * @param $filename
+ *   The filename including path to write the dump to.
+ * @param $options
+ *   An associative array of snapshot options, as described in demo_dump().
  */
-function demo_dump_db($filename, $exclude = array()) {
+function demo_dump_db($filename, $options = array()) {
   // Make sure we have permission to save our backup file.
-  if (!file_check_directory(dirname($filename), FILE_CREATE_DIRECTORY)) {
+  $directory = dirname($filename);
+  if (!file_check_directory($directory, FILE_CREATE_DIRECTORY)) {
     return FALSE;
   }
 
   if ($fp = fopen($filename, 'wb')) {
-    $header  = "-- Demo.module database dump (version ". DEMO_DUMP_VERSION .")\n";
+    $header = "-- Demo.module database dump (version " . DEMO_DUMP_VERSION . ")\n";
     $header .= "-- http://drupal.org/project/demo\n";
     $header .= "--\n";
-    $header .= "-- Database: ". _demo_get_database() ."\n";
-    $header .= "-- Date: ". format_date(time(), 'large') ."\n\n";
+    $header .= "-- Database: " . _demo_get_database() . "\n";
+    $header .= "-- Date: " . format_date(time(), 'large') . "\n\n";
     // Avoid auto value for zero values (required for user id 0).
     $header .= "SET SQL_MODE=\"NO_AUTO_VALUE_ON_ZERO\";\n";
     // Temporarily disable foreign key checks for the time of import.
     $header .= "SET FOREIGN_KEY_CHECKS = 0;\n";
     fwrite($fp, $header);
 
-    foreach (demo_enum_tables() as $table) {
-      // Always export structure to allow creating a new site
-      // from a database dump
-      fwrite($fp, _demo_dump_table_structure($table));
-
-      if (!in_array($table, $exclude)) {
-        fwrite($fp, _demo_dump_table_data($table));
+    foreach ($options['tables'] as $table => $dump_options) {
+      if (!_demo_table_is_view($table)) {
+        if ($dump_options['schema']) {
+          _demo_dump_table_schema($fp, $table);
+        }
+        if ($dump_options['data']) {
+          _demo_dump_table_data($fp, $table);
+        }
       }
     }
 
@@ -57,32 +64,64 @@ function _demo_get_database() {
 }
 
 /**
- * Dump table structure.
+ * Enumerate database tables.
  */
-function _demo_dump_table_structure($table) {
-  $output  = "\n";
+function _demo_enum_tables() {
+  return db_query('SHOW TABLES');
+}
+
+/**
+ * Dump table schema.
+ *
+ * @param $fp
+ *   The file handle of the output file.
+ * @param $table
+ *   A table name to export the schema for.
+ */
+function _demo_dump_table_schema($fp, $table) {
+  $output = "\n";
   $output .= "--\n";
   $output .= "-- Table structure for table '$table'\n";
   $output .= "--\n\n";
 
   $data = db_fetch_array(db_query("SHOW CREATE TABLE %s", $table));
-  $output .= preg_replace('/^CREATE TABLE/', 'CREATE TABLE IF NOT EXISTS', $data['Create Table']) .";\n";
+  $output .= preg_replace('/^CREATE TABLE/', 'CREATE TABLE IF NOT EXISTS', $data['Create Table']);
+  $status = db_fetch_array(db_query("SHOW TABLE STATUS LIKE '%s'", $table));
+  // PDO is missing the table type.
+  if (!strpos($output, ' ENGINE=')) {
+    $output .= ' ENGINE=' . $status['engine'];
+  }
+  // @todo Wrong value; contains 'utf8_general_ci' (collation), not 'utf8' (charset).
+  //$output .= ' DEFAULT CHARSET=' . $status['collation'];
+  if (!empty($status['comment'])) {
+    $output .= " COMMENT='" . $status['comment'] . "'";
+  }
+  // @todo Depends on whether we dump data and table existence on import.
+//  if (!empty($status['auto_increment'])) {
+//    $output .= ' AUTO_INCREMENT=' . $status['auto_increment'];
+//  }
+  $output .= ";\n";
 
-  return $output;
+  fwrite($fp, $output);
 }
 
 /**
  * Dump table data.
  *
  * This code has largely been stolen from the phpMyAdmin project.
+ *
+ * @param $fp
+ *   The file handle of the output file.
+ * @param $table
+ *   A table name to export the data for.
  */
-function _demo_dump_table_data($table) {
-  $output  = "\n";
+function _demo_dump_table_data($fp, $table) {
+  $output = "\n";
   $output .= "--\n";
   $output .= "-- Dumping data for table '$table'\n";
   $output .= "--\n\n";
-  
-  // Dump table data
+
+  // Dump table data.
   $result = db_query("SELECT * FROM %s", $table);
 
   // Get table fields.
@@ -122,25 +161,30 @@ function _demo_dump_table_data($table) {
         else if ($fields[$field]->binary && $fields[$field]->blob) {
           // Empty blobs need to be different, but '0' is also empty :-(
           if (empty($value) && $value != '0') {
-              $values[] = "''";
-          } else {
-              $values[] = '0x' . bin2hex($value);
+            $values[] = "''";
+          }
+          else {
+            $values[] = '0x' . bin2hex($value);
           }
         }
         // Something else -> treat as a string
         else {
-          $values[] = "'". str_replace($search, $replace, $value) ."'";
+          $values[] = "'" . str_replace($search, $replace, $value) . "'";
         }
         $field++;
       }
 
       if ($current_row == 1) {
-        $insert_buffer = $insert_cmd . '('. implode(', ', $values) . ')';
+        $insert_buffer = $insert_cmd . '(' . implode(', ', $values) . ')';
       }
       else {
-        $insert_buffer = '('. implode(', ', $values) . ')';
+        $insert_buffer = '(' . implode(', ', $values) . ')';
+
+        // Check if buffer size exceeds 50KB.
         if ($query_size + strlen($insert_buffer) > 50000) {
-          $output .= ";\n";
+          // Flush to disc and start new buffer.
+          fwrite($fp, $output . ";\n");
+          $output = '';
           $current_row = 1;
           $query_size = 0;
           $insert_buffer = $insert_cmd . $insert_buffer;
@@ -159,7 +203,7 @@ function _demo_dump_table_data($table) {
     $output .= "/*!40000 ALTER TABLE $table ENABLE KEYS */;\n";
   }
 
-  return $output;
+  fwrite($fp, $output);
 }
 
 /**
@@ -195,5 +239,17 @@ function _demo_get_fields($result) {
   }
 
   return $fields;
+}
+
+/**
+ * Determine whether the given table is a VIEW.
+ */
+function _demo_table_is_view($table) {
+  static $tables = array();
+  if (!isset($tables[$table])) {
+    $status = db_fetch_array(db_query("SHOW TABLE STATUS LIKE '%s'", $table));
+    $tables[$table] = (strtoupper(substr($status['Comment'], 0, 4)) == 'VIEW');
+  }
+  return $tables[$table];
 }
 

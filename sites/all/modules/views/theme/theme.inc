@@ -1,5 +1,5 @@
 <?php
-// $Id: theme.inc,v 1.84.2.4 2009/11/30 19:05:47 merlinofchaos Exp $
+// $Id: theme.inc,v 1.73.2.22 2010/01/19 22:11:28 merlinofchaos Exp $
 
 /**
  * @file theme.inc
@@ -49,41 +49,21 @@ function template_preprocess_views_view(&$vars) {
   $vars['name']       = $view->name;
   $vars['display_id'] = $view->current_display;
 
-  if (!$vars['rows']) {
-    $vars['empty']    = $view->display_handler->render_empty();
-    if (!$view->display_handler->get_option('header_empty')) {
-      $vars['header'] = '';
-    }
-    if (!$view->display_handler->get_option('footer_empty')) {
-      $vars['footer'] = '';
-    }
-  }
-  else {
-    $vars['empty']    = '';
-    $header = TRUE;
+  $empty = empty($vars['rows']);
+
+  $vars['header'] = $view->display_handler->render_area('header', $empty);
+  $vars['footer'] = $view->display_handler->render_area('footer', $empty);
+  if ($empty) {
+    $vars['empty'] = $view->display_handler->render_area('empty');
   }
 
   $vars['exposed']    = !empty($view->exposed_widgets) ? $view->exposed_widgets : '';
-  if (!isset($vars['header'])) {
-    $vars['header']   = $view->display_handler->render_header();
-  }
-  if (!isset($vars['footer'])) {
-    $vars['footer']   = $view->display_handler->render_footer();
-  }
   $vars['more']       = $view->display_handler->render_more_link();
   $vars['feed_icon']  = !empty($view->feed_icon) ? $view->feed_icon : '';
+  $vars['pager']      = $view->query->render_pager();
 
   $vars['attachment_before'] = !empty($view->attachment_before) ? $view->attachment_before : '';
   $vars['attachment_after'] = !empty($view->attachment_after) ? $view->attachment_after : '';
-
-  $vars['pager']      = '';
-
-  $exposed_input = isset($view->exposed_data_raw) ? $view->exposed_data_raw : NULL;
-  if ($view->display_handler->render_pager()) {
-    $pager_type = ($view->pager['use_pager'] === 'mini' ? 'views_mini_pager' : 'pager');
-    $pager_theme = views_theme_functions($pager_type, $view, $view->display_handler->display);
-    $vars['pager']    = theme($pager_theme, $exposed_input, $view->pager['items_per_page'], $view->pager['element']);
-  }
 
   // if administrator, add some links. These used to be tabs, but this is better.
   if (user_access('administer views') && module_exists('views_ui') && empty($view->hide_admin_links) && !variable_get('views_no_hover_links', FALSE)) {
@@ -114,7 +94,6 @@ function template_preprocess_views_view(&$vars) {
     $vars['admin_links'] = '';
     $vars['admin_links_raw'] = array();
   }
-  views_add_css('views');
 
   // Our JavaScript needs to have some means to find the HTML belonging to this
   // view.
@@ -145,7 +124,7 @@ function template_preprocess_views_view(&$vars) {
             'view_dom_id' => $vars['dom_id'],
             // To fit multiple views on a page, the programmer may have
             // overridden the display's pager_element.
-            'pager_element' => $view->pager['element'],
+            'pager_element' => $view->query->pager->get_pager_id(),
           ),
         ),
       ),
@@ -206,7 +185,8 @@ function template_preprocess_views_view_fields(&$vars) {
  * this: @code { $row->{$field->field_alias} @endcode
  */
 function theme_views_view_field($view, $field, $row) {
-  return $field->advanced_render($row);
+  // Reference safe for PHP 4:
+  return $view->field[$field->options['id']]->advanced_render($row);
 }
 
 /**
@@ -338,25 +318,29 @@ function template_preprocess_views_view_table(&$vars) {
       $vars['fields'][$field] .= ' active';
     }
 
+    // Add a CSS align class to each field if one was set
+    if (!empty($options['info'][$field]['align'])) {
+      $vars['fields'][$field] .= ' ' . views_css_safe($options['info'][$field]['align']);
+    }
+
     // Render each field into its appropriate column.
     foreach ($result as $num => $row) {
       if (!empty($fields[$field]) && empty($fields[$field]->options['exclude'])) {
         $field_output = $renders[$num][$field];
 
-        if (!isset($vars['rows'][$num][$column])) {
-          $vars['rows'][$num][$column] = '';
-        }
-
         // Don't bother with separators and stuff if the field does not show up.
-        if ($field_output === '') {
+        if (empty($field_output) && !empty($vars['rows'][$num][$column])) {
           continue;
         }
 
         // Place the field into the column, along with an optional separator.
-        if ($vars['rows'][$num][$column] !== '') {
+        if (!empty($vars['rows'][$num][$column])) {
           if (!empty($options['info'][$column]['separator'])) {
             $vars['rows'][$num][$column] .= filter_xss_admin($options['info'][$column]['separator']);
           }
+        }
+        else {
+          $vars['rows'][$num][$column] = '';
         }
 
         $vars['rows'][$num][$column] .= $field_output;
@@ -364,8 +348,9 @@ function template_preprocess_views_view_table(&$vars) {
     }
   }
 
+  $count = 0;
   foreach ($vars['rows'] as $num => $row) {
-    $vars['row_classes'][$num][] = ($num % 2 == 0) ? 'odd' : 'even';
+    $vars['row_classes'][$num][] = ($count++ % 2 == 0) ? 'odd' : 'even';
   }
 
   $vars['row_classes'][0][] = 'views-row-first';
@@ -551,7 +536,6 @@ function template_preprocess_views_view_row_rss(&$vars) {
  * Default theme function for all filter forms.
  */
 function template_preprocess_views_exposed_form(&$vars) {
-  views_add_css('views');
   $form = &$vars['form'];
 
   // Put all single checkboxes together in the last spot.
@@ -597,6 +581,19 @@ function template_preprocess_views_exposed_form(&$vars) {
   unset($form['form_build_id']);
   unset($form['form_token']);
 
+  if (isset($form['sort_by'])) {
+    $vars['sort_by'] = drupal_render($form['sort_by']);
+    $vars['sort_order'] = drupal_render($form['sort_order']);
+  }
+  if (isset($form['items_per_page'])) {
+    $vars['items_per_page'] = drupal_render($form['items_per_page']);
+  }
+  if (isset($form['offset'])) {
+    $vars['offset'] = drupal_render($form['offset']);
+  }
+  if (isset($form['reset'])) {
+    $vars['reset_button'] = drupal_render($form['reset']);
+  }
   // This includes the submit button.
   $vars['button'] = drupal_render($form);
 }

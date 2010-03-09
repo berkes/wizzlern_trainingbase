@@ -1,5 +1,5 @@
 <?php
-// $Id: content_plugin_display_simple.inc,v 1.1.2.4 2009/06/23 13:19:12 yched Exp $
+// $Id: content_plugin_display_simple.inc,v 1.1.2.3.2.1 2009/06/23 13:20:38 yched Exp $
 
 /**
  * @file

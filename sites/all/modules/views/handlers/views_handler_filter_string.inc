@@ -1,5 +1,5 @@
 <?php
-// $Id: views_handler_filter_string.inc,v 1.8 2009/09/15 16:25:55 merlinofchaos Exp $
+// $Id: views_handler_filter_string.inc,v 1.7.2.3 2009/11/10 23:20:05 merlinofchaos Exp $
 
 /**
  * Basic textfield filter to handle string filtering commands
@@ -82,6 +82,18 @@ class views_handler_filter_string extends views_handler_filter {
         'title' => t('Does not contain'),
         'short' => t('!has'),
         'method' => 'op_not',
+        'values' => 1,
+      ),
+      'shorterthan' => array(
+        'title' => t('Length is shorter than'),
+        'short' => t('shorter than'),
+        'method' => 'op_shorter',
+        'values' => 1,
+      ),
+      'longerthan' => array(
+        'title' => t('Length is longer than'),
+        'short' => t('longer than'),
+        'method' => 'op_longer',
         'values' => 1,
       ),
     );
@@ -287,6 +299,14 @@ class views_handler_filter_string extends views_handler_filter {
 
   function op_not($field, $upper) {
     $this->query->add_where($this->options['group'], "$upper(%s) NOT LIKE $upper('%%%s%%')", $field, $this->value);
+  }
+
+  function op_shorter($field, $upper) {
+    $this->query->add_where($this->options['group'], "LENGTH($upper(%s)) < %d", $field, $this->value);
+  }
+
+  function op_longer($field, $upper) {
+    $this->query->add_where($this->options['group'], "LENGTH($upper(%s)) > %d", $field, $this->value);
   }
 
   function op_empty($field) {

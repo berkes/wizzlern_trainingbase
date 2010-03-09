@@ -1,5 +1,5 @@
 <?php
-// $Id: views_handler_filter_in_operator.inc,v 1.12 2009/09/25 00:29:43 merlinofchaos Exp $
+// $Id: views_handler_filter_in_operator.inc,v 1.6.2.9 2009/09/25 14:33:06 merlinofchaos Exp $
 /**
  * Simple filter to handle matching of multiple options selectable via checkboxes
  *
@@ -272,7 +272,6 @@ class views_handler_filter_in_operator extends views_handler_filter {
     // instead.
 
     $form_state['values']['options']['value'] = $form['value']['#value'];
-//    $form_state['values']['options']['value'] = array_filter($form_state['values']['options']['value']);
   }
 
   function admin_summary() {

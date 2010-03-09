@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.5.2.16 2009/02/06 18:17:22 smk Exp $
+// $Id: CHANGELOG.txt,v 1.5.2.39 2010/02/19 18:23:45 sun Exp $
 
 Demo x.x-x.x, xxxx-xx-xx
 ------------------------
@@ -6,6 +6,42 @@ Demo x.x-x.x, xxxx-xx-xx
 
 Demo 6.x-1.x, xxxx-xx-xx
 ------------------------
+
+
+Demo 6.x-1.4, 2010-02-19
+------------------------
+#715174 by sun: Fixed Demo Reset block not working.
+#702428 by swentel: Fixed undefined constant REQUEST_TIME error.
+
+
+Demo 6.x-1.3, 2010-01-17
+------------------------
+by sun: Fixed file permissions of new .info and .sql files.
+#637458 by smk-ka: Fixed broken dumps whne not using PDO driver.
+#633050 by sun: Fixed false error message about missing engine support.
+#294879 by sun: Splitted module into API and demo_reset module.
+#375507 by sun: Added hook_uninstall().
+by sun: Fixed table engine, charset, and comment not contained in snapshot.
+#505800 by smk-ka: Fixed SQL VIEWS are causing faulty dump.
+#535754 by smk-ka, sun: Added API functions/hooks to perform dumps and resets.
+by sun: Fixed length of form button captions on snapshot management form.
+#370402 by sun: Added option to download snapshot files.
+#496620 by evoltech: Fixed paths in README.txt.
+by smk-ka: Added admin_menu cache table to exclude list.
+#489666 by stella: Added hook invocation after successful reset.
+by sun: Fixed coding-style.
+#424524 by John Money, sun: Fixed site not reset on all cron runs.
+#256714 by sun: Fixed site name sub-folder no longer appended.
+#256714 by smk-ka, sun: Removed site name sub-folder from dump directory path.
+#393186 by sun: Fixed fatal error: Only variables can be passed by reference.
+#372113 by sun: Fixed not all cache tables are skipped.
+
+
+Demo 6.x-1.2, 2009-02-06
+------------------------
+by smk-ka: Made watchdog messages translatable (fixed a potx warning).
+#369711 by smk-ka: Added confirmation before deleting a snapshot.
+#369642 by smk-ka: Added checkbox to define new snapshot as default.
 #329182 by sun: Moved menu items below admin/build.
 #299841 by sun: Fixed wrong function arguments for watchdog().
 #286781 by alex_b: Added function return value for demo_reset().
@@ -16,9 +52,6 @@ Demo 6.x-1.x, xxxx-xx-xx
 #265801 by smk-ka: Added exclusion of data in cache tables for snapshots.
 #312215 by rondp: Added foreign key support.
 #294879 by smk-ka: Moved admin functions into include file.
-#369642 by smk-ka: Added checkbox to define new snapshot as default.
-#369711 by smk-ka: Added confirmation before deleting a snapshot.
-by smk-ka: Made watchdog messages translatable (fixed a potx warning).
 
 
 Demo 6.x-1.1, 2008-04-29

@@ -1,5 +1,5 @@
 <?php
-// $Id: views_handler_field.inc,v 1.33.2.1 2009/11/02 23:31:17 merlinofchaos Exp $
+// $Id: views_handler_field.inc,v 1.14.2.23 2010/01/04 23:03:51 merlinofchaos Exp $
 /**
  * @defgroup views_field_handlers Views' field handlers
  * @{
@@ -94,7 +94,12 @@ class views_handler_field extends views_handler {
           else {
             $table_alias = $this->table_alias;
           }
-          $this->aliases[$identifier] = $this->query->add_field($table_alias, $info['field']);
+          $params = array();
+          if (!empty($info['params'])) {
+            $params = $info['params'];
+          }
+
+          $this->aliases[$identifier] = $this->query->add_field($table_alias, $info['field'], NULL, $params);
         }
         else {
           $this->aliases[$info] = $this->query->add_field($this->table_alias, $info);
@@ -142,6 +147,7 @@ class views_handler_field extends views_handler {
     $options = parent::option_definition();
 
     $options['label'] = array('default' => $this->definition['title'], 'translatable' => TRUE);
+    $options['exclude'] = array('default' => FALSE, 'bool' => TRUE);
     $options['alter'] = array(
       'contains' => array(
         'alter_text' => array('default' => FALSE),
@@ -173,6 +179,8 @@ class views_handler_field extends views_handler {
    * should have.
    */
   function options_form(&$form, &$form_state) {
+    parent::options_form($form, $form_state);
+
     $form['label'] = array(
       '#type' => 'textfield',
       '#title' => t('Label'),
@@ -272,7 +280,7 @@ class views_handler_field extends views_handler {
           'edit-options-alter-make-link' => array(1)
         ),
       );
-      
+
 
       // Get a list of the available fields and arguments for token replacement.
       $options = array();
@@ -458,7 +466,7 @@ class views_handler_field extends views_handler {
           $this->original_value = $this->last_render;
 
           $alter = $item + $this->options['alter'];
-          $items[] = $this->render_text($alter);       
+          $items[] = $this->render_text($alter);
         }
 
         $value = $this->render_items($items);
@@ -511,7 +519,7 @@ class views_handler_field extends views_handler {
 
     return $value;
   }
-  
+
   /**
    * Render this field as altered text, from a fieldset set by the user.
    */
@@ -662,12 +670,12 @@ class views_handler_field extends views_handler {
       else {
         $tokens["[$field]"] = '';
       }
+      $this->add_self_tokens($tokens, $item);
+
       // We only use fields up to (and including) this one.
       if ($field == $this->options['id']) {
         break;
       }
-
-      $this->add_self_tokens($tokens, $item);
     }
 
     return $tokens;

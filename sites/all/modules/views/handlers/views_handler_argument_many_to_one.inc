@@ -1,5 +1,5 @@
 <?php
-// $Id: views_handler_argument_many_to_one.inc,v 1.1 2008/09/03 19:21:28 merlinofchaos Exp $
+// $Id: views_handler_argument_many_to_one.inc,v 1.1.2.1 2010/01/19 21:59:04 merlinofchaos Exp $
 /**
  * An argument handler for use in fields that have a many to one relationship
  * with the table(s) to the left. This adds a bunch of options that are
@@ -12,7 +12,7 @@
  * @ingroup views_argument_handlers
  */
 class views_handler_argument_many_to_one extends views_handler_argument {
-  function init(&$view, &$options) {
+  function init(&$view, $options) {
     parent::init($view, $options);
     $this->helper = new views_many_to_one_helper($this);
 

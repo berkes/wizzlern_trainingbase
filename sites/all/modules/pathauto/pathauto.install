@@ -1,5 +1,5 @@
 <?php
-// $Id: pathauto.install,v 1.13.2.1 2009/10/17 17:37:27 greggles Exp $
+// $Id: pathauto.install,v 1.14 2009/10/17 17:36:58 greggles Exp $
 
 /**
  * @file

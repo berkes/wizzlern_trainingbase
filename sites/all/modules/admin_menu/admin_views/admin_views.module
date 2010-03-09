@@ -1,0 +1,56 @@
+<?php
+// $Id: admin_views.module,v 1.1.2.2 2009/08/16 21:00:19 sun Exp $
+
+/**
+ * @file
+ * Replaces all system object management pages in Drupal core with real views.
+ */
+
+/**
+ * Implementation of hook_views_api().
+ */
+function admin_views_views_api() {
+  return array(
+    'api' => 2,
+  );
+}
+
+/**
+ * Implementation of hook_views_default_views().
+ *
+ * @thanks Chapter Three
+ */
+function admin_views_views_default_views() {
+  static $views;
+
+  if (isset($views)) {
+    return $views;
+  }
+
+  $files = file_scan_directory(drupal_get_path('module', 'admin_views') . '/views_default', '.inc');
+  foreach ($files as $filepath => $file) {
+    include $filepath;
+    if (isset($view)) {
+      $views[$view->name] = $view;
+    }
+  }
+  return $views;
+}
+
+/**
+ * Implementation of hook_menu_alter().
+ *
+ * @todo Temporary fix until #550132 has been committed to Views.
+ */
+function admin_views_menu_alter(&$items) {
+  $views = admin_views_views_default_views();
+  foreach ($views as $name => $view) {
+    if (isset($view->display['page_1']->display_options['path'])) {
+      $path = $view->display['page_1']->display_options['path'];
+      if (isset($items[$path])) {
+        $items[$path]['type'] = MENU_NORMAL_ITEM;
+      }
+    }
+  }
+}
+

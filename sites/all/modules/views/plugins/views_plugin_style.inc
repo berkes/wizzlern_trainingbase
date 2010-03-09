@@ -1,5 +1,5 @@
 <?php
-// $Id: views_plugin_style.inc,v 1.8.2.6 2009/11/30 19:21:48 merlinofchaos Exp $
+// $Id: views_plugin_style.inc,v 1.5.2.7 2009/11/30 19:21:44 merlinofchaos Exp $
 
 /**
  * @defgroup views_style_plugins Views' style plugins

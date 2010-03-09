@@ -1,5 +1,5 @@
 <?php
-// $Id: taxonomy.views.inc,v 1.57 2009/07/01 06:13:49 merlinofchaos Exp $
+// $Id: taxonomy.views.inc,v 1.50.2.8 2009/12/23 23:56:16 merlinofchaos Exp $
 /**
  * @file
  *
@@ -51,6 +51,10 @@ function taxonomy_views_data() {
       'handler' => 'views_handler_field',
       'click sortable' => TRUE,
     ),
+    'sort' => array(
+      'handler' => 'views_handler_sort',
+      'help' => t('The taxonomy vocabulary name'),
+    ),
   );
   $data['vocabulary']['vid'] = array(
     'title' => t('Vocabulary ID'), // The item it appears as on the UI,
@@ -58,6 +62,9 @@ function taxonomy_views_data() {
     'argument' => array(
       'handler' => 'views_handler_argument_vocabulary_vid',
       'name field' => 'name',
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_sort',
     ),
   );
 
@@ -203,6 +210,7 @@ function taxonomy_views_data() {
       'help' => t('Display all taxonomy terms associated with a node from specified vocabularies.'),
       'handler' => 'views_handler_field_term_node_tid',
       'skip base' => 'term_data',
+      'no group by' => TRUE,
     ),
     'argument' => array(
       'handler' => 'views_handler_argument_term_node_tid',
@@ -265,7 +273,7 @@ function taxonomy_views_data() {
     'argument' => array(
       'help' => t('The parent term of the term.'),
       'handler' => 'views_handler_argument_numeric',
-    ),    
+    ),
   );
 
   // ----------------------------------------------------------------------
