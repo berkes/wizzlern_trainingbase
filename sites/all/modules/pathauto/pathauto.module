@@ -1,5 +1,9 @@
 <?php
+<<<<<<< HEAD:sites/all/modules/pathauto/pathauto.module
 // $Id: pathauto.module,v 1.118.2.19 2010/02/19 23:11:29 davereid Exp $
+=======
+// $Id: pathauto.module,v 1.118.2.6 2009/10/17 17:45:53 greggles Exp $
+>>>>>>> origin/master:sites/all/modules/pathauto/pathauto.module
 
 /**
  * @defgroup pathauto Pathauto: Automatically generates aliases for content
@@ -104,7 +108,11 @@ function pathauto_token_values($type, $object = NULL) {
 
           // Get taxonomy related data.
           $vid = db_result(db_query_range("SELECT t.vid FROM {term_node} r INNER JOIN {term_data} t ON r.tid = t.tid INNER JOIN {vocabulary} v ON t.vid = v.vid WHERE r.vid = %d ORDER BY v.weight, t.weight, t.name", $object->vid, 0, 1));
+<<<<<<< HEAD:sites/all/modules/pathauto/pathauto.module
           $category = db_fetch_object(db_query_range("SELECT t.tid, t.name FROM {term_data} t INNER JOIN {term_node} r ON r.tid = t.tid WHERE t.vid = %d AND r.nid = %d ORDER BY t.weight", $vid, $object->nid, 0, 1));
+=======
+          $category = db_fetch_object(db_query_range("SELECT t.tid, t.name FROM {term_data} t INNER JOIN {term_node} r ON r.tid = t.tid WHERE t.vid = %d AND r.nid = %d ORDER BY weight", $vid, $object->nid, 0, 1));
+>>>>>>> origin/master:sites/all/modules/pathauto/pathauto.module
           $category->vid = $vid;
           // In the realm of nodes these are terms, in the realm of Taxonomy, cats
           $label = 'term';
@@ -201,6 +209,7 @@ function pathauto_path_alias_types() {
  * Implementation of hook_nodeapi().
  */
 function pathauto_nodeapi(&$node, $op, $teaser, $page) {
+<<<<<<< HEAD:sites/all/modules/pathauto/pathauto.module
   switch ($op) {
     case 'presave':
       // About to be saved (before insert/update)
@@ -224,6 +233,30 @@ function pathauto_nodeapi(&$node, $op, $teaser, $page) {
       }
       if (empty($pattern)) {
         $pattern = trim(variable_get('pathauto_node_'. $node->type .'_pattern', FALSE));
+=======
+  if (module_exists('path')) {
+    switch ($op) {
+      case 'presave':
+        // About to be saved (before insert/update)
+        if (!empty($node->pathauto_perform_alias) && isset($node->old_alias)
+            && $node->path == '' && $node->old_alias != '') {
+          /**
+           * There was an old alias, but when pathauto_perform_alias was checked
+           * the javascript disabled the textbox which led to an empty value being
+           * submitted. Restoring the old path-value here prevents the Path module
+           * from deleting any old alias before Pathauto gets control.
+           */
+          $node->path = $node->old_alias;
+        }
+        break;
+      case 'insert':
+      case 'update':
+        _pathauto_include();
+        // Get the specific pattern or the default
+        if (variable_get('language_content_type_'. $node->type, 0)) {
+          $pattern = trim(variable_get('pathauto_node_'. $node->type .'_'. $node->language .'_pattern', FALSE));
+        }
+>>>>>>> origin/master:sites/all/modules/pathauto/pathauto.module
         if (empty($pattern)) {
           $pattern = trim(variable_get('pathauto_node_pattern', FALSE));
         }
@@ -275,7 +308,11 @@ function pathauto_form_alter(&$form, $form_state, $form_id) {
     // If there is a pattern, show the automatic alias checkbox.
     if ($pattern) {
       if (!isset($node->pathauto_perform_alias)) {
+<<<<<<< HEAD:sites/all/modules/pathauto/pathauto.module
         if (!empty($node->nid)) {
+=======
+        if (isset($node->nid)) {
+>>>>>>> origin/master:sites/all/modules/pathauto/pathauto.module
           // If this is not a new node, compare it's current alias to the
           // alias that would be genereted by pathauto. If they are the same,
           // then keep the automatic alias enabled.
@@ -293,9 +330,12 @@ function pathauto_form_alter(&$form, $form_state, $form_id) {
       // Add JavaScript that will disable the path textfield when the automatic
       // alias checkbox is checked.
       drupal_add_js(drupal_get_path('module', 'pathauto') .'/pathauto.js');
+<<<<<<< HEAD:sites/all/modules/pathauto/pathauto.module
 
       // Override path.module's vertical tabs summary.
       $form['path']['#attached']['js']['vertical-tabs'] = drupal_get_path('module', 'pathauto') . '/pathauto.js';
+=======
+>>>>>>> origin/master:sites/all/modules/pathauto/pathauto.module
 
       $form['path']['pathauto_perform_alias'] = array(
         '#type' => 'checkbox',

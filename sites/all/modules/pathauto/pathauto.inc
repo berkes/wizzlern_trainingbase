@@ -1,5 +1,9 @@
 <?php
+<<<<<<< HEAD:sites/all/modules/pathauto/pathauto.inc
 // $Id: pathauto.inc,v 1.45.2.10 2010/02/20 03:05:19 davereid Exp $
+=======
+// $Id: pathauto.inc,v 1.45.2.3 2009/10/20 17:52:12 greggles Exp $
+>>>>>>> origin/master:sites/all/modules/pathauto/pathauto.inc
 
 /**
  * @file
@@ -24,7 +28,11 @@ function _pathauto_alias_exists($alias, $src, $language = '') {
   $alias_pid = db_result(db_query_range("SELECT pid FROM {url_alias} WHERE dst = '%s' AND src <> '%s' AND language = '%s'", array($alias, $src, $language), 0, 1));
   if (function_exists('path_redirect_delete_multiple')) {
     // Delete from path_redirect the exact same alias to the same node.
+<<<<<<< HEAD:sites/all/modules/pathauto/pathauto.inc
     path_redirect_delete_multiple(NULL, array('source' => $alias, 'redirect' => $src));
+=======
+    path_redirect_delete(array('path' => $alias, 'redirect' => $src));
+>>>>>>> origin/master:sites/all/modules/pathauto/pathauto.inc
 
     // If there still is this alias used in path_redirect, then create a different alias
     $redirects = path_redirect_load_multiple(NULL, array('source' => $alias));
@@ -146,8 +154,29 @@ function pathauto_cleanstring($string, $clean_slash = TRUE) {
   // Always replace whitespace with the separator.
   $output = preg_replace('/\s+/', $separator, $output);
 
+<<<<<<< HEAD:sites/all/modules/pathauto/pathauto.inc
   // Trim duplicates and remove trailing and leading separators.
   $output = _pathauto_clean_separators($output, $separator);
+=======
+  // In preparation for pattern matching,
+  // escape the separator if and only if it is not alphanumeric.
+  if (isset($separator)) {
+    if (preg_match('/^[^'. PREG_CLASS_ALNUM .']+$/uD', $separator)) {
+      $seppattern = $separator;
+    }
+    else {
+      $seppattern = '\\'. $separator;
+    }
+    // Trim any leading or trailing separators (note the need to
+    $output = preg_replace("/^$seppattern+|$seppattern+$/", '', $output);
+
+    // Replace trailing separators around slashes.
+    $output = preg_replace("/$seppattern\/|\/$seppattern/", "/", $output);
+
+    // Replace multiple separators with a single one
+    $output = preg_replace("/$seppattern+/", "$separator", $output);
+  }
+>>>>>>> origin/master:sites/all/modules/pathauto/pathauto.inc
 
   // Enforce the maximum component length
   $maxlength = min(variable_get('pathauto_max_component_length', 100), 128);
@@ -417,7 +446,11 @@ function _pathauto_set_alias($src, $dst, $entity_type, $entity_id, $pid = NULL, 
     if (variable_get('pathauto_update_action', 2) == 3 && function_exists('path_redirect_save')) {
       if (!empty($old_alias)) {
         $redirect = array(
+<<<<<<< HEAD:sites/all/modules/pathauto/pathauto.inc
           'source' => $old_alias,
+=======
+          'path' => $old_alias,
+>>>>>>> origin/master:sites/all/modules/pathauto/pathauto.inc
           'redirect' => $src,
         );
         path_redirect_save($redirect);
