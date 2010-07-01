@@ -1,5 +1,3 @@
-<<<<<<< HEAD:.gitignore
 sites/yasmine
-=======
 sites/default/settings.php
->>>>>>> origin/master:.gitignore
+sites/localhost/files/
